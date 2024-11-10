@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Weather App</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Weather App</h1>
+        
+        <!-- Error Handling -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <!-- Form to search by city -->
+        <form method="POST" class="mb-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Enter city name" name="city" required>
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Get Weather</button>
+                </div>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="units" value="metric" {% if units == "metric" %}checked{% endif %}>
+                <label class="form-check-label" for="metric">
+                    Celsius
+                </label>
+                <input class="form-check-input" type="radio" name="units" value="imperial" {% if units == "imperial" %}checked{% endif %}>
+                <label class="form-check-label" for="imperial">
+                    Fahrenheit
+                </label>
+            </div>
+        </form>
+
+        {% if weather %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>{{ weather.name }} Weather</h3>
+                    <p><strong>Temperature: </strong>{{ weather.main.temp }}°{% if units == 'metric' %}C{% else %}F{% endif %}</p>
+                    <p><strong>Condition: </strong>{{ weather.weather[0].description }}</p>
+                    <p><strong>Humidity: </strong>{{ weather.main.humidity }}%</p>
+                    <p><strong>Wind Speed: </strong>{{ weather.wind.speed }} m/s</p>
+                </div>
+            </div>
+
+            <h4>7-Day Forecast</h4>
+            <div class="row">
+                {% for day in forecast %}
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>{{ day.dt | datetimeformat }}</h5>
+                                <p>{{ day.temp.day }}°{% if units == 'metric' %}C{% else %}F{% endif %}</p>
+                                <p>{{ day.weather[0].description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
