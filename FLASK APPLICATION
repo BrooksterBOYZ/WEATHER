@@ -1,0 +1,83 @@
+from flask import Flask, render_template, request, jsonify
+import requests
+from flask_caching import Cache
+import json
+
+app = Flask(__name__)
+
+# Set up cache
+app.config['CACHE_TYPE'] = 'simple'
+cache = Cache(app)
+
+# Your OpenWeatherMap API key
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "http://api.openweathermap.org/data/2.5/"
+
+# Cache expiration time (5 minutes)
+CACHE_TIMEOUT = 300
+
+# Helper function to fetch weather data from the API
+def get_weather_data(city, units="metric"):
+    url = f"{BASE_URL}weather?q={city}&appid={API_KEY}&units={units}"
+    response = requests.get(url)
+    return response.json()
+
+def get_forecast_data(lat, lon, units="metric"):
+    url = f"{BASE_URL}onecall?lat={lat}&lon={lon}&appid={API_KEY}&units={units}&exclude=current,minutely,hourly,alerts"
+    response = requests.get(url)
+    return response.json()
+
+# Home route: Search for weather by city name
+@app.route("/", methods=["GET", "POST"])
+@cache.cached(timeout=CACHE_TIMEOUT)
+def index():
+    if request.method == "POST":
+        city = request.form["city"]
+        units = request.form.get("units", "metric")
+        try:
+            weather_data = get_weather_data(city, units)
+            if weather_data.get("cod") != 200:
+                return render_template("index.html", error="City not found!")
+            
+            # Get latitude and longitude for the forecast
+            lat = weather_data["coord"]["lat"]
+            lon = weather_data["coord"]["lon"]
+            forecast_data = get_forecast_data(lat, lon, units)
+            
+            return render_template("index.html", weather=weather_data, forecast=forecast_data['daily'], city=city, units=units)
+        
+        except Exception as e:
+            return render_template("index.html", error="Could not fetch weather data!")
+    
+    return render_template("index.html")
+
+# Geolocation route to automatically detect user's location
+@app.route("/geolocation", methods=["GET"])
+@cache.cached(timeout=CACHE_TIMEOUT)
+def geolocation():
+    try:
+        # Getting the user's IP address and geolocation info (using a free IP geolocation API)
+        ip_info = requests.get("https://ipinfo.io").json()
+        city = ip_info["city"]
+        
+        weather_data = get_weather_data(city)
+        lat = weather_data["coord"]["lat"]
+        lon = weather_data["coord"]["lon"]
+        forecast_data = get_forecast_data(lat, lon)
+        
+        return render_template("index.html", weather=weather_data, forecast=forecast_data['daily'], city=city)
+    
+    except Exception as e:
+        return render_template("index.html", error="Could not detect your location.")
+
+# Route to handle AJAX requests for city weather (used for future enhancements)
+@app.route("/weather/<city>/<units>", methods=["GET"])
+def weather_info(city, units):
+    try:
+        weather_data = get_weather_data(city, units)
+        return jsonify(weather_data)
+    except Exception as e:
+        return jsonify({"error": "Could not fetch weather data!"}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
