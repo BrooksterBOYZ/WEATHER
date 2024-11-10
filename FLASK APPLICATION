@@ -10,7 +10,7 @@ app.config['CACHE_TYPE'] = 'simple'
 cache = Cache(app)
 
 # Your OpenWeatherMap API key
-API_KEY = "YOUR_API_KEY"
+API_KEY = "8b64c6f5bc6849b7d94956b4abd9d899"
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
 
 # Cache expiration time (5 minutes)
